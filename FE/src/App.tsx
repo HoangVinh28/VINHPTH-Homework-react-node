@@ -29,13 +29,16 @@ import NavigationBar from "./components/NavigationBar";
 import Categories from "./Pages/Categories";
 import Homes from "./Pages/Homes";
 import Product from "./Pages/Product";
+import ProductLists from "./Pages/ProductLists";
+import Supplier from "./Pages/Supplier";
+import Employee from "./Pages/Employee";
+import Customer from "./Pages/Customer";
+import CategoryList from "./Pages/CategoryList";
 
 import numeral from "numeral";
 import "numeral/locales/vi";
 
-import Supplier from "./Pages/Supplier";
-import Employee from "./Pages/Employee";
-import Customer from "./Pages/Customer";
+
 
 const { Header } = Layout;
 
@@ -69,6 +72,8 @@ function App() {
             <Route path="/suppliers" element={<Supplier />} />
             <Route path="/employees" element={<Employee />} />
             <Route path="/customers" element={<Customer />} />
+            <Route path="/product-list" element={<ProductLists />} />
+            <Route path="/category-list" element={<CategoryList />} />
           </Routes>
         </Content>
         <Footer style={footerStyle}></Footer>

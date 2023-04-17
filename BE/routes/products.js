@@ -29,12 +29,86 @@ const fileName = './data/products.json'; */
 /* router.get('/', function (req, res, next) {
   res.send(data);
 }); */
+// router.get("/", async (req, res, next) => {
+//   try {
+//     let results = await Product.find()
+//       .populate("category")
+//       .populate("supplier")
+//       .lean({ virtual: true });
+//     res.json(results);
+//   } catch (error) {
+//     res.status(500).json({ ok: false, error });
+//   }
+// });
+
+// router.get("/", async (req, res, next) => {
+//     try {
+//       const { product,category,supplier} = req.query;
+//       const conditionFind = {};
+//       if (product) {
+//         conditionFind.name = product;
+//       }
+//       if(category){
+//         conditionFind.name = category;
+//       }
+//       if(supplier){
+//         conditionFind.name = supplier;
+//       }
+//       let results = await Product.find(conditionFind)
+//         .populate("category")
+//         .populate("supplier")
+//         .lean({ virtuals: true });
+
+//       res.json(results);
+//     } catch (error) {
+//       res.status(500).json({ ok: false, error });
+//     }
+//   });
+
 router.get("/", async (req, res, next) => {
   try {
-    let results = await Product.find()
+    const { product, category, supplier } = req.query;
+    const conditionFind = {};
+    if (product) {
+      conditionFind.name = product;
+    }
+    if (category) {
+      Product.aggregate()
+        .lookup({
+          from: "suppliers",
+          localField: "supplierId",
+          foreignField: "_id",
+          as: "suppliers",
+        })
+        .lookup({
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "categories",
+        })
+        .unwind("suppliers")
+        .unwind("categories")
+        // .match({ name : "Điện thoại" })
+        .group({
+          _id: "$categories._id",
+          name: { $first: "$categories.name" },
+        })
+        .then((result) => {
+          res.send(result);
+        })
+        .catch((err) => {
+          res.status(400).send({ message: err.message });
+        });
+        conditionFind.name = category;
+    }
+    if (supplier) {
+      conditionFind.name = supplier;
+    }
+    let results = await Product.find(conditionFind)
       .populate("category")
       .populate("supplier")
-      .lean({ virtual: true });
+      .lean({ virtuals: true });
+
     res.json(results);
   } catch (error) {
     res.status(500).json({ ok: false, error });

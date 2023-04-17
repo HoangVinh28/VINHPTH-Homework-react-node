@@ -25,7 +25,7 @@ const productSchema = Schema(
       ref: "Supplier",
       required: true,
     },
-    description : { type: String, required: true }
+    // description : { type: String, required: true }
   },
   {
     versionKey: false,

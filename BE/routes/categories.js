@@ -24,15 +24,33 @@ let data = require("../data/categories.json"); */
 // Methods: POST / PATCH / GET / DELETE / PUT
 
 // Get all
+// router.get("/", async (req, res, next) => {
+//   /*  res.send(data); */
+//   try {
+//     let results = await Category.find();
+//     res.send(results);
+//   } catch (err) {
+//     res.sendStatus(500);
+//   }
+// });
+
 router.get("/", async (req, res, next) => {
-  /*  res.send(data); */
-  try {
-    let results = await Category.find();
-    res.send(results);
-  } catch (err) {
-    res.sendStatus(500);
-  }
-});
+    /*  res.send(data); */
+    try {
+      
+      const params = Object.fromEntries(new URLSearchParams(req?.query));
+      const query = params?.category;
+      let results;
+      if (query) {
+        results = await Category.find({ name: query }).exec();
+      } else {
+        results = await Category.find();
+      }
+      res.send(results);
+    } catch (err) {
+      res.sendStatus(500);
+    }
+  });
 
 //GET ID VALIDATE
 /* router.get("/:id", async function (req, res, next) {
