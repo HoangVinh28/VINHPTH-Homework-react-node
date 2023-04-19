@@ -71,7 +71,7 @@ router.get('/', validateSchema(getProductsSchema), async (req, res, next) => {
         category,
         sup,
         product,
-        skip = 1,
+        skip ,
         limit = 10,
         stockStart,
         stockEnd,

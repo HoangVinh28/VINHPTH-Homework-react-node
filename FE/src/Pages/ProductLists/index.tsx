@@ -394,6 +394,8 @@ export default function ProductList() {
           allowClear
         />
 
+
+
         <Button
           type="primary"
           onClick={onSearch}
@@ -517,7 +519,7 @@ export default function ProductList() {
         <Pagination
           defaultCurrent={0}
           total={50}
-        //   pageSize={limit}
+          pageSize={limit}
           onChange={(skip, limit) => {
             const start = (skip - 1) * limit;
             const end = start + limit; //start +
@@ -525,9 +527,6 @@ export default function ProductList() {
           }}
         />
       </Modal>
-      
-      {/* <div onClick={nextPage}> Previous Page </div>
-     <div onClick={previousPage}> Next Page </div>  */}
     </div>
     
   );
