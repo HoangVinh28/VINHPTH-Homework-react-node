@@ -3,10 +3,7 @@ const express = require("express");
 const router = express.Router();
 const passport = require("passport");
 
-const {
-  validateSchema,
-  getProductsSchema,
-} = require("../validation/product");
+const { validateSchema, getProductsSchema } = require("../validation/product");
 const { Product } = require("../models/index");
 const ObjectId = require("mongodb").ObjectId;
 const { CONNECTION_STRING } = require("../constants/dbSettings");
@@ -65,120 +62,78 @@ const fileName = './data/products.json'; */
 //     }
 //   });
 
-router.get('/', validateSchema(getProductsSchema), async (req, res, next) => {
-    try {
-      const {
-        category,
-        sup,
-        product,
-        skip ,
-        limit = 10,
-        stockStart,
-        stockEnd,
-        priceStart,
-        priceEnd,
-        discountStart,
-        discountEnd,
-      } = req.query;
-      
-      const conditionFind = {};
-  
-      if (category) conditionFind.categoryId = category;
-      if (sup) conditionFind.supplierId =sup;
-      if (product) {
-        conditionFind.name = new RegExp(`${product}`)
-      }
-  
-    //   if (stockStart & stockEnd) {
-    //     conditionFind.stock = {
-    //       $expr: {
-    //         $and: [
-    //           { stock: { $gte: Number(stockStart) } },
-    //           { stock: { $lte: Number(stockEnd) } },
-    //         ]
-    //       }
-    //     }
-    //   } else if (stockStart) {
-    //     conditionFind.stock = {
-    //       $expr: {
-    //         $and: [
-    //           { stock: { $gte: Number(stockStart) } },
-    //         ]
-    //       }
-    //     }
-    //   } else if (stockEnd) {
-    //     conditionFind.stock = {
-    //       $expr: {
-    //         $and: [
-    //           { stock: { $lte: Number(stockEnd) } },
-    //         ]
-    //       }
-    //     }
-    //   }
+router.get("/", validateSchema(getProductsSchema), async (req, res, next) => {
+  try {
+    const {
+      category,
+      sup,
+      product,
+      skip,
+      limit,
+      stockStart,
+      stockEnd,
+      priceStart,
+      priceEnd,
+      discountStart,
+      discountEnd,
+    } = req.query;
+
+    const conditionFind = {};
+
+    if (category) conditionFind.categoryId = category;
+    if (sup) conditionFind.supplierId = sup;
+    if (product) {
+      conditionFind.name = new RegExp(`${product}`);
+    }
 
     if (stockStart || stockEnd) {
-        const stockGte = stockStart ? { $gte: stockStart } : {};
-        const stockLte = stockEnd ? { $lte: stockEnd } : {};
-        conditionFind.stock = {
-          ...stockGte,
-          ...stockLte,
-          $exists: true
-        }
-      }
-      if (priceStart || priceEnd) {
-        const priceGte = priceStart ? { $gte: priceStart } : {};
-        const priceLte = priceEnd ? { $lte: priceEnd } : {};
-        conditionFind.stock = {
-          ...priceGte,
-          ...priceLte,
-          $exists: true
-        }
-      }if (discountStart || discountEnd) {
-        const discountGte = discountStart ? { $gte: discountStart } : {};
-        const discountLte = discountEnd ? { $lte: discountEnd } : {};
-        conditionFind.stock = {
-          ...discountGte,
-          ...discountLte,
-          $exists: true
-        }
-      }
-    //   const startIndex = (skip - 1) * limit;
-    //   const endIndex = skip * limit;
-   
-    //   const result = {};
-    //   if (endIndex < model.length) {
-    //     result.next = {
-    //       skip: skip + 1,
-    //       limit: limit
-    //     };
-    //   }
-   
-    //   if (startIndex > 0) {
-    //     result.previous = {
-    //       skip: skip - 1,
-    //       limit: limit
-    //     };
-    //   }
-   
-   
-    //   res.paginatedResults = results;
-    //   next();
-      console.log('««««« conditionFind »»»»»', conditionFind);
-  
-      let results = await Product
-      .find(conditionFind)
-      .populate('category')
-      .populate('supplier')
+      const stockGte = stockStart ? { $gte: stockStart } : {};
+      const stockLte = stockEnd ? { $lte: stockEnd } : {};
+      conditionFind.stock = {
+        ...stockGte,
+        ...stockLte,
+        $exists: true,
+      };
+    }
+    if (priceStart || priceEnd) {
+      const priceGte = priceStart ? { $gte: priceStart } : {};
+      const priceLte = priceEnd ? { $lte: priceEnd } : {};
+      conditionFind.price = {
+        ...priceGte,
+        ...priceLte,
+        $exists: true,
+      };
+    }
+    if (discountStart || discountEnd) {
+      const discountGte = discountStart ? { $gte: discountStart } : {};
+      const discountLte = discountEnd ? { $lte: discountEnd } : {};
+      conditionFind.discount = {
+        ...discountGte,
+        ...discountLte,
+        $exists: true,
+      };
+    }
+    console.log("««««« conditionFind »»»»»", conditionFind);
+
+    let results = await Product.find(conditionFind)
+      .populate("category")
+      .populate("supplier")
       .skip(skip)
       .limit(limit)
       .lean({ virtuals: true });
-  
-      res.json(results);
-    } catch (error) {
-      console.log('««««« error »»»»»', error);
-      res.status(500).json({ ok: false, error });
-    }
-  });
+
+    // res.json(results);
+    const totalResults = await Product.countDocuments(conditionFind);
+
+    res.json({
+      payload: results,
+      total: totalResults,
+    });
+  } catch (error) {
+    console.log("error", error);
+    res.status(500).json({ ok: false, error });
+  }
+});
 
 router.get("/:id", function (req, res, next) {
   // Validate

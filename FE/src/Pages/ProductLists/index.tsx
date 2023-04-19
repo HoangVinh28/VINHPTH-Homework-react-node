@@ -11,9 +11,10 @@ import {
   Table,
 } from "antd";
 import axios from "../../libraries/axiosClient";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 import type { ColumnsType } from "antd/es/table";
 import numeral from "numeral";
@@ -43,13 +44,20 @@ export default function ProductList() {
 
   const [updateForm] = Form.useForm();
 
-//   const nextPage = () => {
-//     setSkip(skip + limit);
-//   };
+  const[pageCount, setPageCount] = React.useState<number>(0);
+  const[total] = React.useState<number>(0)
 
-//   const previousPage = () => {
-//     setSkip(skip - limit);
-//   };
+  const totalPage = useMemo(() => Math.ceil( total /10) || 1,[total])
+
+  React.useEffect(()=>{
+    setPageCount(totalPage);
+  },[totalPage])
+
+ 
+
+  const create = () => {
+    window.location.href = "/product";
+  };
 
   const onSelectPriceStartFilter = useCallback((e: any) => {
     setPriceStart(e.target.value);
@@ -114,10 +122,10 @@ export default function ProductList() {
       stockEnd: any;
       priceStart: any;
       priceEnd: any;
-      discountStart: any;
-      discountEnd: any;
-      skip: any;
-      limit: any;
+      //   discountStart: any;
+      //   discountEnd: any;
+      //   skip: any;
+      //   limit: any;
     } = {
       product,
       category,
@@ -126,10 +134,10 @@ export default function ProductList() {
       stockEnd: stockEnd || 2000000,
       priceStart: priceStart || 0,
       priceEnd: priceEnd || 1000000000,
-      discountStart: discountStart || 0,
-      discountEnd: discountEnd || 75,
-      skip: 0,
-      limit: 5,
+      //   discountStart: discountStart || 0,
+      //   discountEnd: discountEnd || 75,
+      //   skip: 0,
+      //   limit,
     };
 
     const searchParams: URLSearchParams = new URLSearchParams(filters);
@@ -144,10 +152,10 @@ export default function ProductList() {
     stockEnd,
     priceStart,
     priceEnd,
-    discountStart,
-    discountEnd,
-    skip,
-    limit,
+    // discountStart,
+    // discountEnd,
+    // skip,
+    // limit,
   ]);
 
   const columns: ColumnsType<any> = [
@@ -166,8 +174,6 @@ export default function ProductList() {
       dataIndex: "category.name",
       key: "category.name",
       render: (text, record, index) => {
-        // console.log("record", record);
-        // console.log('index',index)
         return <span>{record?.category?.name}</span>;
       },
     },
@@ -258,7 +264,7 @@ export default function ProductList() {
       .get(apiName)
       .then((response) => {
         const { data } = response;
-        setItems(data);
+        setItems(data.payload);
       })
       .catch((err) => {
         console.error(err);
@@ -305,7 +311,16 @@ export default function ProductList() {
 
   return (
     <div style={{ padding: 24 }}>
-      <div style={{ padding: 24, display: "flex" }}>
+      <div
+        style={{
+          padding: 24,
+          display: "flex",
+          border: "1px solid #ccc",
+          marginBottom: "20px",
+          borderRadius: "5px",
+          backgroundColor: "#ffcccc",
+        }}
+      >
         <Input
           placeholder="Tìm kiếm tên sản phẩm"
           onChange={onSelectProductFilter}
@@ -343,7 +358,6 @@ export default function ProductList() {
           }}
         >
           {categories.map((item: { _id: string; name: string }) => {
-            console.log("item", item);
             return (
               <option key={item._id} value={item._id}>
                 {item.name}
@@ -353,6 +367,7 @@ export default function ProductList() {
         </select>
 
         <Input
+          style={{ marginLeft: "10px" }}
           placeholder="Tồn kho nhỏ nhất"
           onChange={onSelectStockStartFilter}
           value={stockStart}
@@ -360,6 +375,7 @@ export default function ProductList() {
         />
 
         <Input
+          style={{ marginLeft: "10px" }}
           placeholder="Tồn kho lớn nhất"
           onChange={onSelectStockEndFilter}
           value={stockEnd}
@@ -367,6 +383,7 @@ export default function ProductList() {
         />
 
         <Input
+          style={{ marginLeft: "10px" }}
           placeholder="Giá nhỏ nhất"
           onChange={onSelectPriceStartFilter}
           value={priceStart}
@@ -374,6 +391,7 @@ export default function ProductList() {
         />
 
         <Input
+          style={{ marginLeft: "10px" }}
           placeholder="Giá lớn nhất"
           onChange={onSelectPriceEndFilter}
           value={priceEnd}
@@ -381,6 +399,7 @@ export default function ProductList() {
         />
 
         <Input
+          style={{ marginLeft: "10px" }}
           placeholder="Giảm giá nhỏ nhất"
           onChange={onSelectDiscountStartFilter}
           value={discountStart}
@@ -388,13 +407,12 @@ export default function ProductList() {
         />
 
         <Input
+          style={{ marginLeft: "10px" }}
           placeholder="Giảm giá lớn nhất"
           onChange={onSelectDiscountEndFilter}
           value={discountEnd}
           allowClear
         />
-
-
 
         <Button
           type="primary"
@@ -403,9 +421,13 @@ export default function ProductList() {
         >
           Search
         </Button>
+        <Button type="primary" onClick={create} style={{ marginLeft: "10px" }}>
+          Tạo mới sản phẩm
+        </Button>
       </div>
 
       <Table
+      style={{border : '1px solid black',borderRadius : '5px'}}
         rowKey={"_id"}
         dataSource={items}
         columns={columns}
@@ -516,18 +538,18 @@ export default function ProductList() {
             <InputNumber style={{ width: 200 }} />
           </Form.Item>
         </Form>
+
         <Pagination
           defaultCurrent={0}
-          total={50}
-          pageSize={limit}
+          total={pageCount}
+          pageSize={totalPage}
           onChange={(skip, limit) => {
             const start = (skip - 1) * limit;
-            const end = start + limit; //start +
+            const end = start + limit; 
             setItems(items.slice(start, end));
           }}
         />
       </Modal>
     </div>
-    
   );
 }

@@ -7,7 +7,7 @@ const ObjectId = require("mongodb").ObjectId;
 const {
   validateSchema,
   loginCategorySchema,
-} = require("../validation/employee");
+} = require("../validation/category");
 const { Category } = require("../models/index");
 const { CONNECTION_STRING } = require("../constants/dbSettings");
 const { default: mongoose } = require("mongoose");
@@ -51,6 +51,34 @@ router.get("/", async (req, res, next) => {
       res.sendStatus(500);
     }
   });
+
+// router.get("/", validateSchema(loginCategorySchema), async (req, res, next) => {
+//     try {
+//       const {
+//         name,
+//         description,
+//         skip,
+//         limit = 10,
+//       } = req.query;
+  
+//       const conditionFind = {};
+//       if (name) {
+//         conditionFind.name = new RegExp(`${name}`);
+//       }
+//       if (description) {
+//         conditionFind.description = new RegExp(`${description}`);
+//       }
+  
+//       let results = await Product.find(conditionFind)
+//         .skip(skip)
+//         .limit(limit)
+  
+//       res.json(results);
+//     } catch (error) {
+//       console.log("««««« error »»»»»", error);
+//       res.status(500).json({ ok: false, error });
+//     }
+//   });
 
 //GET ID VALIDATE
 /* router.get("/:id", async function (req, res, next) {
