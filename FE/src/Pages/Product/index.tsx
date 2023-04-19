@@ -160,10 +160,6 @@ export default function Categories() {
             <InputNumber style={{ width: 200 }} />
           </Form.Item>
 
-          {/* <Form.Item label="Mô tả / Ghi chú" name="description" hasFeedback>
-            <InputNumber style={{ width: 200 }} />
-          </Form.Item> */}
-
           <Form.Item
             wrapperCol={{
               offset: 8,

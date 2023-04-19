@@ -27,6 +27,8 @@ export default function CategoryList() {
   const [category, setCategory] = React.useState<any[]>();
   const [updateFrom] = Form.useForm();
 
+  
+
     const onSelectCategoryFilter = useCallback((e: any) => {
       setCategory(e.target.value);
     }, []);
@@ -185,7 +187,7 @@ export default function CategoryList() {
         rowKey={"_id"}
         // dataSource={categories}
         columns={columns}
-        // pagination={false}
+        pagination={false}
         dataSource={dataSource}
       />
 
@@ -230,7 +232,7 @@ export default function CategoryList() {
             <Input />
           </Form.Item>
         </Form>
-        <Pagination
+        {/* <Pagination
           defaultCurrent={1}
           total={50}
           pageSize={10}
@@ -239,7 +241,7 @@ export default function CategoryList() {
             const end = start + pageSize; //start +
             setCategories(categories.slice(start, end));
           }}
-        />
+        /> */}
       </Modal>
     </div>
   );

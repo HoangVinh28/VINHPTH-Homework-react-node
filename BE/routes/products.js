@@ -5,8 +5,8 @@ const passport = require("passport");
 
 const {
   validateSchema,
-  loginProductSchema,
-} = require("../validation/employee");
+  getProductsSchema,
+} = require("../validation/product");
 const { Product } = require("../models/index");
 const ObjectId = require("mongodb").ObjectId;
 const { CONNECTION_STRING } = require("../constants/dbSettings");
@@ -65,55 +65,120 @@ const fileName = './data/products.json'; */
 //     }
 //   });
 
-router.get("/", async (req, res, next) => {
-  try {
-    const { product, category, supplier } = req.query;
-    const conditionFind = {};
-    if (product) {
-      conditionFind.name = product;
-    }
-    if (category) {
-      Product.aggregate()
-        .lookup({
-          from: "suppliers",
-          localField: "supplierId",
-          foreignField: "_id",
-          as: "suppliers",
-        })
-        .lookup({
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "categories",
-        })
-        .unwind("suppliers")
-        .unwind("categories")
-        // .match({ name : "Điện thoại" })
-        .group({
-          _id: "$categories._id",
-          name: { $first: "$categories.name" },
-        })
-        .then((result) => {
-          res.send(result);
-        })
-        .catch((err) => {
-          res.status(400).send({ message: err.message });
-        });
-        conditionFind.name = category;
-    }
-    if (supplier) {
-      conditionFind.name = supplier;
-    }
-    let results = await Product.find(conditionFind)
-      .populate("category")
-      .populate("supplier")
-      .lean({ virtuals: true });
+router.get('/', validateSchema(getProductsSchema), async (req, res, next) => {
+    try {
+      const {
+        category,
+        sup,
+        product,
+        skip = 1,
+        limit = 10,
+        stockStart,
+        stockEnd,
+        priceStart,
+        priceEnd,
+        discountStart,
+        discountEnd,
+      } = req.query;
+      
+      const conditionFind = {};
+  
+      if (category) conditionFind.categoryId = category;
+      if (sup) conditionFind.supplierId =sup;
+      if (product) {
+        conditionFind.name = new RegExp(`${product}`)
+      }
+  
+    //   if (stockStart & stockEnd) {
+    //     conditionFind.stock = {
+    //       $expr: {
+    //         $and: [
+    //           { stock: { $gte: Number(stockStart) } },
+    //           { stock: { $lte: Number(stockEnd) } },
+    //         ]
+    //       }
+    //     }
+    //   } else if (stockStart) {
+    //     conditionFind.stock = {
+    //       $expr: {
+    //         $and: [
+    //           { stock: { $gte: Number(stockStart) } },
+    //         ]
+    //       }
+    //     }
+    //   } else if (stockEnd) {
+    //     conditionFind.stock = {
+    //       $expr: {
+    //         $and: [
+    //           { stock: { $lte: Number(stockEnd) } },
+    //         ]
+    //       }
+    //     }
+    //   }
 
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ ok: false, error });
-  }
-});
+    if (stockStart || stockEnd) {
+        const stockGte = stockStart ? { $gte: stockStart } : {};
+        const stockLte = stockEnd ? { $lte: stockEnd } : {};
+        conditionFind.stock = {
+          ...stockGte,
+          ...stockLte,
+          $exists: true
+        }
+      }
+      if (priceStart || priceEnd) {
+        const priceGte = priceStart ? { $gte: priceStart } : {};
+        const priceLte = priceEnd ? { $lte: priceEnd } : {};
+        conditionFind.stock = {
+          ...priceGte,
+          ...priceLte,
+          $exists: true
+        }
+      }if (discountStart || discountEnd) {
+        const discountGte = discountStart ? { $gte: discountStart } : {};
+        const discountLte = discountEnd ? { $lte: discountEnd } : {};
+        conditionFind.stock = {
+          ...discountGte,
+          ...discountLte,
+          $exists: true
+        }
+      }
+    //   const startIndex = (skip - 1) * limit;
+    //   const endIndex = skip * limit;
+   
+    //   const result = {};
+    //   if (endIndex < model.length) {
+    //     result.next = {
+    //       skip: skip + 1,
+    //       limit: limit
+    //     };
+    //   }
+   
+    //   if (startIndex > 0) {
+    //     result.previous = {
+    //       skip: skip - 1,
+    //       limit: limit
+    //     };
+    //   }
+   
+   
+    //   res.paginatedResults = results;
+    //   next();
+      console.log('««««« conditionFind »»»»»', conditionFind);
+  
+      let results = await Product
+      .find(conditionFind)
+      .populate('category')
+      .populate('supplier')
+      .skip(skip)
+      .limit(limit)
+      .lean({ virtuals: true });
+  
+      res.json(results);
+    } catch (error) {
+      console.log('««««« error »»»»»', error);
+      res.status(500).json({ ok: false, error });
+    }
+  });
 
 router.get("/:id", function (req, res, next) {
   // Validate
@@ -147,29 +212,29 @@ router.get("/:id", function (req, res, next) {
 });
 
 //POST TOKEN LOGIN ID
-router.post(
-  "/login/:id",
-  validateSchema(loginProductSchema),
-  async (req, res, next) => {
-    try {
-      const { _id } = req.body;
-      const product = await Product.findById({ _id });
+// router.post(
+//   "/login/:id",
+//   validateSchema(loginProductSchema),
+//   async (req, res, next) => {
+//     try {
+//       const { _id } = req.body;
+//       const product = await Product.findById({ _id });
 
-      console.log(product);
+//       console.log(product);
 
-      if (!product) return res.status(404).send("khong tim thay");
+//       if (!product) return res.status(404).send("khong tim thay");
 
-      const token = encodeToken(product._id, product.name, product.price);
+//       const token = encodeToken(product._id, product.name, product.price);
 
-      res.send({
-        token,
-        payload: product,
-      });
-    } catch {
-      res.send("error");
-    }
-  }
-);
+//       res.send({
+//         token,
+//         payload: product,
+//       });
+//     } catch {
+//       res.send("error");
+//     }
+//   }
+// );
 
 //GET TOKEN PROFILE
 router.get(

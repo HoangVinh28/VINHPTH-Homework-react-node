@@ -5,6 +5,7 @@ import {
   InputNumber,
   message,
   Modal,
+  Pagination,
   Select,
   Space,
   Table,
@@ -29,15 +30,61 @@ export default function ProductList() {
   const [updateId, setUpdateId] = React.useState<number>(0);
 
   const [category, setCategory] = React.useState<any[]>();
-  const [supplier, setSuppliers]= React.useState<any[]>();
+  const [sup, setSup] = React.useState<any[]>();
   const [product, setProduct] = React.useState<any[]>();
+  const [stockStart, setStockStart] = React.useState("");
+  const [stockEnd, setStockEnd] = React.useState("");
+  const [priceStart, setPriceStart] = React.useState("");
+  const [priceEnd, setPriceEnd] = React.useState("");
+  const [discountStart, setDiscountStart] = React.useState("");
+  const [discountEnd, setDiscountEnd] = React.useState("");
+  const [skip, setSkip] = React.useState(0);
+  const [limit, setLimit] = React.useState(5);
 
   const [updateForm] = Form.useForm();
 
+//   const nextPage = () => {
+//     setSkip(skip + limit);
+//   };
+
+//   const previousPage = () => {
+//     setSkip(skip - limit);
+//   };
+
+  const onSelectPriceStartFilter = useCallback((e: any) => {
+    setPriceStart(e.target.value);
+  }, []);
+
+  const onSelectPriceEndFilter = useCallback((e: any) => {
+    setPriceEnd(e.target.value);
+  }, []);
+
+  const onSelectDiscountStartFilter = useCallback((e: any) => {
+    setDiscountStart(e.target.value);
+  }, []);
+
+  const onSelectDiscountEndFilter = useCallback((e: any) => {
+    setDiscountEnd(e.target.value);
+  }, []);
+
+  const onSelectStockStartFilter = useCallback((e: any) => {
+    setStockStart(e.target.value);
+  }, []);
+
+  const onSelectStockEndFilter = useCallback((e: any) => {
+    setStockEnd(e.target.value);
+  }, []);
+
   const onSelectProductFilter = useCallback((e: any) => {
     setProduct(e.target.value);
+  }, []);
+
+  const onSelectCategoryFilter = useCallback((e: any) => {
     setCategory(e.target.value);
-    setSuppliers(e.target.value);
+  }, []);
+
+  const onSelectSupplierFilter = useCallback((e: any) => {
+    setSup(e.target.value);
   }, []);
 
   const callApi = useCallback((searchParams: any) => {
@@ -51,8 +98,7 @@ export default function ProductList() {
       .then((response) => {
         const { data } = response;
         setItems(data);
-        setCategories(data);
-        setSupplier(data);
+        // setCategories(data);
       })
       .catch((err) => {
         console.error(err);
@@ -60,36 +106,49 @@ export default function ProductList() {
   }, []);
 
   const onSearch = useCallback(() => {
-    let filters: { product: any,  category: any ,supplier : any} = {
+    let filters: {
+      product: any;
+      category: any;
+      sup: any;
+      stockStart: any;
+      stockEnd: any;
+      priceStart: any;
+      priceEnd: any;
+      discountStart: any;
+      discountEnd: any;
+      skip: any;
+      limit: any;
+    } = {
       product,
       category,
-      supplier
+      sup,
+      stockStart: stockStart || 0,
+      stockEnd: stockEnd || 2000000,
+      priceStart: priceStart || 0,
+      priceEnd: priceEnd || 1000000000,
+      discountStart: discountStart || 0,
+      discountEnd: discountEnd || 75,
+      skip: 0,
+      limit: 5,
     };
 
     const searchParams: URLSearchParams = new URLSearchParams(filters);
 
     callApi(searchParams);
-  }, [callApi, product, category,supplier]);
-
-  //   const [filterName, setFilterName] = React.useState<any[]>([]);
-
-  //   const handleSearch = (e: any) => {
-  //     setFilterName(e.target.value);
-  //   };
-
-  //   const filteredData = items.filter(
-  //     (item) => item.name.indexOf(filterName) !== -1 // kiểm tra nếu tên của danh mục chứa từ khóa tìm kiếm
-  //   );
-
-  //   const dataSource = filteredData.map((item) => ({
-  //     key: item.id,
-  //     name: item.name,
-  //     price: item.price,
-  //     discount: item.discount,
-  //     stock: item.stock,
-  //     categoryId: item.categoryId,
-  //     supplierId: item.supplierId,
-  //   }));
+  }, [
+    callApi,
+    product,
+    category,
+    sup,
+    stockStart,
+    stockEnd,
+    priceStart,
+    priceEnd,
+    discountStart,
+    discountEnd,
+    skip,
+    limit,
+  ]);
 
   const columns: ColumnsType<any> = [
     {
@@ -246,52 +305,103 @@ export default function ProductList() {
 
   return (
     <div style={{ padding: 24 }}>
-      <div>
-        <select id="cars" onChange={onSelectProductFilter}>
-          {items.map((item: { _id: string; name: string }) => {
-            return (
-              <option key={item._id} value={item.name}>
-                {item.name}
-              </option>
-            );
-          })}
-        </select>
+      <div style={{ padding: 24, display: "flex" }}>
+        <Input
+          placeholder="Tìm kiếm tên sản phẩm"
+          onChange={onSelectProductFilter}
+          value={product}
+          allowClear
+        />
 
-        <button onClick={onSearch}> TÌM KIẾM</button>
-      </div>
-
-      <div>
-        <select id="cars" onChange={onSelectProductFilter}>
+        <select
+          id="cars"
+          onChange={onSelectSupplierFilter}
+          style={{
+            width: "50%",
+            borderRadius: "5px",
+            height: "30px",
+            marginLeft: "10px",
+          }}
+        >
           {suppliers.map((item: { _id: string; name: string }) => {
             return (
-              <option key={item._id} value={item.name}>
+              <option key={item._id} value={item._id}>
                 {item.name}
               </option>
             );
           })}
         </select>
 
-        <button onClick={onSearch}> TÌM KIẾM</button>
-      </div>
-      
-      <div>
-        <select id="cars" onChange={onSelectProductFilter}>
+        <select
+          id="cars"
+          onChange={onSelectCategoryFilter}
+          style={{
+            width: "50%",
+            borderRadius: "5px",
+            height: "30px",
+            marginLeft: "10px",
+          }}
+        >
           {categories.map((item: { _id: string; name: string }) => {
+            console.log("item", item);
             return (
-              <option key={item._id} value={item.name}>
+              <option key={item._id} value={item._id}>
                 {item.name}
               </option>
             );
           })}
         </select>
 
-        <button onClick={onSearch}> TÌM KIẾM</button>
-      </div>
-      {/* <Input
-          placeholder="Tìm kiếm danh mục"
-          onChange={handleSearch}
+        <Input
+          placeholder="Tồn kho nhỏ nhất"
+          onChange={onSelectStockStartFilter}
+          value={stockStart}
           allowClear
-        /> */}
+        />
+
+        <Input
+          placeholder="Tồn kho lớn nhất"
+          onChange={onSelectStockEndFilter}
+          value={stockEnd}
+          allowClear
+        />
+
+        <Input
+          placeholder="Giá nhỏ nhất"
+          onChange={onSelectPriceStartFilter}
+          value={priceStart}
+          allowClear
+        />
+
+        <Input
+          placeholder="Giá lớn nhất"
+          onChange={onSelectPriceEndFilter}
+          value={priceEnd}
+          allowClear
+        />
+
+        <Input
+          placeholder="Giảm giá nhỏ nhất"
+          onChange={onSelectDiscountStartFilter}
+          value={discountStart}
+          allowClear
+        />
+
+        <Input
+          placeholder="Giảm giá lớn nhất"
+          onChange={onSelectDiscountEndFilter}
+          value={discountEnd}
+          allowClear
+        />
+
+        <Button
+          type="primary"
+          onClick={onSearch}
+          style={{ marginLeft: "10px" }}
+        >
+          Search
+        </Button>
+      </div>
 
       <Table
         rowKey={"_id"}
@@ -404,7 +514,21 @@ export default function ProductList() {
             <InputNumber style={{ width: 200 }} />
           </Form.Item>
         </Form>
+        <Pagination
+          defaultCurrent={0}
+          total={50}
+        //   pageSize={limit}
+          onChange={(skip, limit) => {
+            const start = (skip - 1) * limit;
+            const end = start + limit; //start +
+            setItems(items.slice(start, end));
+          }}
+        />
       </Modal>
+      
+      {/* <div onClick={nextPage}> Previous Page </div>
+     <div onClick={previousPage}> Next Page </div>  */}
     </div>
+    
   );
 }
