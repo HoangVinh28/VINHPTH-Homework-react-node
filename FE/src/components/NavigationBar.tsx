@@ -1,4 +1,4 @@
-import { HomeOutlined, SettingOutlined } from "@ant-design/icons";
+import { DatabaseOutlined, HomeOutlined, UnorderedListOutlined } from "@ant-design/icons";
 import { Menu, MenuProps } from "antd";
 import React from "react";
 
@@ -10,11 +10,10 @@ const items: MenuProps["items"] = [
     key: "home",
     icon: <HomeOutlined />,
   },
-
   {
     label: "Management",
     key: "management",
-    icon: <SettingOutlined />,
+    icon: <UnorderedListOutlined />,
     children: [
       {
         label: "Categories",
@@ -25,8 +24,8 @@ const items: MenuProps["items"] = [
         key: "suppliers",
       },
       {
-        label: "Products",
-        key: "products",
+        label: "Product",
+        key: "/product-list",
       },
       {
         label: "Customers",
@@ -35,6 +34,17 @@ const items: MenuProps["items"] = [
       {
         label: "Employees",
         key: "employees",
+      },
+    ],
+  },
+  {
+    label: "Create",
+    key: "create",
+    icon: <DatabaseOutlined /> ,
+    children: [
+      {
+        label: "Products",
+        key: "products",
       },
     ],
   },

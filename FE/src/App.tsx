@@ -48,7 +48,7 @@ const headerStyle: React.CSSProperties = {
 const footerStyle: React.CSSProperties = {
   textAlign: "center",
   color: "#fff",
-  backgroundColor: "#7dbcea",
+  backgroundColor: "#ffcccc",
 };
 const contentStyle: React.CSSProperties = {
   minHeight: "100vh",
@@ -76,7 +76,7 @@ function App() {
             <Route path="/category-list" element={<CategoryList />} />
           </Routes>
         </Content>
-        <Footer style={footerStyle}></Footer>
+        <Footer style={footerStyle}>HOÀNG VINH</Footer>
       </Layout>
     </BrowserRouter>
   );

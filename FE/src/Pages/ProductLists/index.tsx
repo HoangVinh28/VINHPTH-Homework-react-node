@@ -5,19 +5,29 @@ import {
   InputNumber,
   message,
   Modal,
-  Pagination,
   Select,
   Space,
   Table,
 } from "antd";
 import axios from "../../libraries/axiosClient";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 
 import type { ColumnsType } from "antd/es/table";
 import numeral from "numeral";
+
+const initialState = {
+  category: [],
+  sup: [],
+  product: "",
+  stockStart: "",
+  stockEnd: "",
+  priceStart: "",
+  priceEnd: "",
+  discountStart: "",
+  discountEnd: "",
+};
 
 const apiName = "/products";
 
@@ -30,73 +40,28 @@ export default function ProductList() {
   const [open, setOpen] = React.useState<boolean>(false);
   const [updateId, setUpdateId] = React.useState<number>(0);
 
-  const [category, setCategory] = React.useState<any[]>();
-  const [sup, setSup] = React.useState<any[]>();
-  const [product, setProduct] = React.useState<any[]>();
-  const [stockStart, setStockStart] = React.useState("");
-  const [stockEnd, setStockEnd] = React.useState("");
-  const [priceStart, setPriceStart] = React.useState("");
-  const [priceEnd, setPriceEnd] = React.useState("");
-  const [discountStart, setDiscountStart] = React.useState("");
-  const [discountEnd, setDiscountEnd] = React.useState("");
-  const [skip, setSkip] = React.useState(0);
-  const [limit, setLimit] = React.useState(5);
-
   const [updateForm] = Form.useForm();
 
-  const[pageCount, setPageCount] = React.useState<number>(0);
-  const[total] = React.useState<number>(0)
+  const [filter, setFilter] = React.useState<any>(initialState);
 
-  const totalPage = useMemo(() => Math.ceil( total /10) || 1,[total])
-
-  React.useEffect(()=>{
-    setPageCount(totalPage);
-  },[totalPage])
-
- 
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
+  const [pageSize, setPageSize] = React.useState<number>(10);
+  const [total, setTotal] = React.useState<number>();
 
   const create = () => {
-    window.location.href = "/product";
+    window.location.href = "/products";
   };
 
-  const onSelectPriceStartFilter = useCallback((e: any) => {
-    setPriceStart(e.target.value);
+  const onChangeFilter = useCallback((e: any) => {
+    setFilter((prevState: any) => ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }));
   }, []);
 
-  const onSelectPriceEndFilter = useCallback((e: any) => {
-    setPriceEnd(e.target.value);
-  }, []);
-
-  const onSelectDiscountStartFilter = useCallback((e: any) => {
-    setDiscountStart(e.target.value);
-  }, []);
-
-  const onSelectDiscountEndFilter = useCallback((e: any) => {
-    setDiscountEnd(e.target.value);
-  }, []);
-
-  const onSelectStockStartFilter = useCallback((e: any) => {
-    setStockStart(e.target.value);
-  }, []);
-
-  const onSelectStockEndFilter = useCallback((e: any) => {
-    setStockEnd(e.target.value);
-  }, []);
-
-  const onSelectProductFilter = useCallback((e: any) => {
-    setProduct(e.target.value);
-  }, []);
-
-  const onSelectCategoryFilter = useCallback((e: any) => {
-    setCategory(e.target.value);
-  }, []);
-
-  const onSelectSupplierFilter = useCallback((e: any) => {
-    setSup(e.target.value);
-  }, []);
+  console.log("filter", filter);
 
   const callApi = useCallback((searchParams: any) => {
-    console.log("searchParams", searchParams);
     console.log(
       "searchParams111",
       `${apiName}${`?${searchParams.toString()}`}`
@@ -105,8 +70,8 @@ export default function ProductList() {
       .get(`${apiName}${`?${searchParams.toString()}`}`)
       .then((response) => {
         const { data } = response;
-        setItems(data);
-        // setCategories(data);
+        setItems(data.payload);
+        setTotal(data.total);
       })
       .catch((err) => {
         console.error(err);
@@ -114,49 +79,23 @@ export default function ProductList() {
   }, []);
 
   const onSearch = useCallback(() => {
-    let filters: {
-      product: any;
-      category: any;
-      sup: any;
-      stockStart: any;
-      stockEnd: any;
-      priceStart: any;
-      priceEnd: any;
-      //   discountStart: any;
-      //   discountEnd: any;
-      //   skip: any;
-      //   limit: any;
-    } = {
-      product,
-      category,
-      sup,
-      stockStart: stockStart || 0,
-      stockEnd: stockEnd || 2000000,
-      priceStart: priceStart || 0,
-      priceEnd: priceEnd || 1000000000,
-      //   discountStart: discountStart || 0,
-      //   discountEnd: discountEnd || 75,
-      //   skip: 0,
-      //   limit,
-    };
+    const filterFields = Object.keys(filter).filter(
+      (key) => filter[key] !== undefined && filter[key] !== ""
+    );
 
-    const searchParams: URLSearchParams = new URLSearchParams(filters);
+    const searchParams = new URLSearchParams(
+      filterFields.map((key) => {
+        return [key, filter[key]];
+      })
+    );
 
     callApi(searchParams);
-  }, [
-    callApi,
-    product,
-    category,
-    sup,
-    stockStart,
-    stockEnd,
-    priceStart,
-    priceEnd,
-    // discountStart,
-    // discountEnd,
-    // skip,
-    // limit,
-  ]);
+  }, [callApi, filter]);
+
+  const resetFilter = useCallback(() => {
+    setFilter(initialState);
+    callApi(URLSearchParams);
+  }, [callApi]);
 
   const columns: ColumnsType<any> = [
     {
@@ -265,6 +204,7 @@ export default function ProductList() {
       .then((response) => {
         const { data } = response;
         setItems(data.payload);
+        setTotal(data.total);
       })
       .catch((err) => {
         console.error(err);
@@ -282,7 +222,7 @@ export default function ProductList() {
       .catch((err) => {
         console.error(err);
       });
-  }, [refresh]);
+  }, []);
 
   // Get suppliers
   React.useEffect(() => {
@@ -295,7 +235,20 @@ export default function ProductList() {
       .catch((err) => {
         console.error(err);
       });
-  }, [refresh]);
+  }, []);
+
+  React.useEffect(() => {
+    let filters: {
+      skip: any;
+      limit: any;
+    } = {
+      skip: (currentPage - 1) * pageSize,
+      limit: pageSize,
+    };
+    const searchParams: URLSearchParams = new URLSearchParams(filters);
+
+    callApi(searchParams);
+  }, [callApi, currentPage, pageSize]);
 
   const onUpdateFinish = (values: any) => {
     axios
@@ -323,16 +276,18 @@ export default function ProductList() {
       >
         <Input
           placeholder="Tìm kiếm tên sản phẩm"
-          onChange={onSelectProductFilter}
-          value={product}
+          name="product"
+          onChange={onChangeFilter}
+          value={filter.product}
           allowClear
         />
 
         <select
           id="cars"
-          onChange={onSelectSupplierFilter}
+          name="sup"
+          onChange={onChangeFilter}
           style={{
-            width: "50%",
+            width: "100px",
             borderRadius: "5px",
             height: "30px",
             marginLeft: "10px",
@@ -349,9 +304,10 @@ export default function ProductList() {
 
         <select
           id="cars"
-          onChange={onSelectCategoryFilter}
+          name="category"
+          onChange={onChangeFilter}
           style={{
-            width: "50%",
+            width: "150px",
             borderRadius: "5px",
             height: "30px",
             marginLeft: "10px",
@@ -368,49 +324,55 @@ export default function ProductList() {
 
         <Input
           style={{ marginLeft: "10px" }}
-          placeholder="Tồn kho nhỏ nhất"
-          onChange={onSelectStockStartFilter}
-          value={stockStart}
+          placeholder="Stock Min"
+          name="stockStart"
+          onChange={onChangeFilter}
+          value={filter.stockStart}
           allowClear
         />
 
         <Input
           style={{ marginLeft: "10px" }}
-          placeholder="Tồn kho lớn nhất"
-          onChange={onSelectStockEndFilter}
-          value={stockEnd}
+          placeholder="Stock Max"
+          name="stockEnd"
+          value={filter.stockEnd}
+          onChange={onChangeFilter}
           allowClear
         />
 
         <Input
           style={{ marginLeft: "10px" }}
-          placeholder="Giá nhỏ nhất"
-          onChange={onSelectPriceStartFilter}
-          value={priceStart}
+          placeholder="Price Min"
+          name="priceStart"
+          value={filter.priceStart}
+          onChange={onChangeFilter}
           allowClear
         />
 
         <Input
           style={{ marginLeft: "10px" }}
-          placeholder="Giá lớn nhất"
-          onChange={onSelectPriceEndFilter}
-          value={priceEnd}
+          placeholder="Price Max"
+          name="priceEnd"
+          value={filter.priceEnd}
+          onChange={onChangeFilter}
           allowClear
         />
 
         <Input
           style={{ marginLeft: "10px" }}
-          placeholder="Giảm giá nhỏ nhất"
-          onChange={onSelectDiscountStartFilter}
-          value={discountStart}
+          placeholder="Discount Min"
+          name="discountStart"
+          value={filter.discountStart}
+          onChange={onChangeFilter}
           allowClear
         />
 
         <Input
           style={{ marginLeft: "10px" }}
-          placeholder="Giảm giá lớn nhất"
-          onChange={onSelectDiscountEndFilter}
-          value={discountEnd}
+          placeholder="Discount Max"
+          name="discountEnd"
+          value={filter.discountEnd}
+          onChange={onChangeFilter}
           allowClear
         />
 
@@ -421,18 +383,33 @@ export default function ProductList() {
         >
           Search
         </Button>
-        <Button type="primary" onClick={create} style={{ marginLeft: "10px" }}>
-          Tạo mới sản phẩm
+
+        <Button
+          type="primary"
+          onClick={resetFilter}
+          style={{ marginLeft: "10px" }}
+        >
+          Refresh
         </Button>
+
+        <Button type="primary" onClick={create} style={{ marginLeft: "10px" }}>
+          Create
+        </Button>
+        
       </div>
 
       <Table
-      style={{border : '1px solid black',borderRadius : '5px'}}
+        style={{ border: "1px solid black", borderRadius: "5px" }}
         rowKey={"_id"}
         dataSource={items}
         columns={columns}
-        // pagination={false}
-        // dataSource={dataSource}
+        pagination={{
+          total: total,
+          current: currentPage,
+          pageSize: pageSize,
+          onChange: (page) => setCurrentPage(page),
+          onShowSizeChange: (_, size) => setPageSize(size),
+        }}
       />
 
       {/* EDIT FORM */}
@@ -538,17 +515,6 @@ export default function ProductList() {
             <InputNumber style={{ width: 200 }} />
           </Form.Item>
         </Form>
-
-        <Pagination
-          defaultCurrent={0}
-          total={pageCount}
-          pageSize={totalPage}
-          onChange={(skip, limit) => {
-            const start = (skip - 1) * limit;
-            const end = start + limit; 
-            setItems(items.slice(start, end));
-          }}
-        />
       </Modal>
     </div>
   );
