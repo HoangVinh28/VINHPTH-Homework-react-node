@@ -28,6 +28,7 @@ const initialState = {
   discountStart: "",
   discountEnd: "",
 };
+const allOption = [{ _id: "", name: "----All----" }];
 
 const apiName = "/products";
 
@@ -47,6 +48,9 @@ export default function ProductList() {
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [pageSize, setPageSize] = React.useState<number>(10);
   const [total, setTotal] = React.useState<number>();
+  const [deleteProductId, setDeleteProductId] = React.useState<number>(0);
+  const [showDeleteConfirm, setShowDeleteConfirm] =
+    React.useState<boolean>(false);
 
   const create = () => {
     window.location.href = "/products";
@@ -78,24 +82,89 @@ export default function ProductList() {
       });
   }, []);
 
+  //   const onSearch = useCallback(() => {
+  //     const filterFields = Object.keys(filter).filter(
+  //       (key) => filter[key] !== undefined && filter[key] !== ""
+  //     );
+
+  //     const searchParams = new URLSearchParams(
+  //       filterFields.map((key) => {
+  //         return [key, filter[key]];
+  //       })
+  //     );
+
+  //     callApi(searchParams);
+  //   }, [callApi, filter]);
+
   const onSearch = useCallback(() => {
+    const checkInputData = (input: any, name: any) => {
+      if ((input && isNaN(input)) || (input && input < 0)) {
+        message.error(`Dữ liệu nhập vào ô ${name} không hợp lệ!`);
+
+        return true;
+      }
+
+      return false;
+    };
+    // Kiểm tra dữ liệu nhập vào từng ô tìm kiếm
+    const isInvalidData =
+      checkInputData(filter.stockStart, "Tồn kho") ||
+      checkInputData(filter.stockEnd, "Tồn kho") ||
+      checkInputData(filter.priceStart, "Giá bán") ||
+      checkInputData(filter.priceEnd, "Giá bán") ||
+      checkInputData(filter.discountStart, "Giảm giá") ||
+      checkInputData(filter.discountEnd, "Giảm giá");
+
+    if (isInvalidData) return;
+    // Lọc các trường có giá trị để tạo query params
     const filterFields = Object.keys(filter).filter(
       (key) => filter[key] !== undefined && filter[key] !== ""
     );
 
+    // Tạo query params từ các trường đã lọc
     const searchParams = new URLSearchParams(
       filterFields.map((key) => {
         return [key, filter[key]];
       })
     );
 
+    // Gọi API với các query params đã tạo
     callApi(searchParams);
   }, [callApi, filter]);
 
   const resetFilter = useCallback(() => {
     setFilter(initialState);
-    callApi(URLSearchParams);
+    // callApi(URLSearchParams);
+    callApi(initialState)
   }, [callApi]);
+
+  // Hàm hiển thị xác nhận xóa
+  const showConfirmDelete = (productId: number) => {
+    setDeleteProductId(productId);
+    setShowDeleteConfirm(true);
+  };
+  // Hàm xóa sản phẩm
+  const handleDeleteProduct = () => {
+    axios.delete(apiName + "/" + deleteProductId).then((response) => {
+      setRefresh((f) => f + 1);
+      message.success("Xóa sản phẩm thành công!", 1.5);
+      setShowDeleteConfirm(false);
+    });
+  };
+
+  // Modal xác nhận xóa sản phẩm
+  const deleteConfirmModal = (
+    <Modal
+      title="Xóa sản phẩm"
+      open={showDeleteConfirm}
+      onOk={handleDeleteProduct}
+      onCancel={() => setShowDeleteConfirm(false)}
+      okText="Xóa"
+      cancelText="Hủy"
+    >
+      <p>Bạn có chắc chắn muốn xóa sản phẩm?</p>
+    </Modal>
+  );
 
   const columns: ColumnsType<any> = [
     {
@@ -184,11 +253,12 @@ export default function ProductList() {
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
-                console.log(record.id);
-                axios.delete(apiName + "/" + record._id).then((response) => {
-                  setRefresh((f) => f + 1);
-                  message.success("Xóa danh mục thành công!", 1.5);
-                });
+                // console.log(record.id);
+                // axios.delete(apiName + "/" + record._id).then((response) => {
+                //   setRefresh((f) => f + 1);
+                //   message.success("Xóa danh mục thành công!", 1.5);
+                // });
+                showConfirmDelete(record._id);
               }}
             />
           </Space>
@@ -217,7 +287,8 @@ export default function ProductList() {
       .get("/categories")
       .then((response) => {
         const { data } = response;
-        setCategories(data);
+        // setCategories(data);
+        setCategories([...allOption, ...data]);
       })
       .catch((err) => {
         console.error(err);
@@ -230,7 +301,8 @@ export default function ProductList() {
       .get("/suppliers")
       .then((response) => {
         const { data } = response;
-        setSupplier(data);
+        // setSupplier(data);
+        setSupplier([...allOption, ...data]);
       })
       .catch((err) => {
         console.error(err);
@@ -245,9 +317,10 @@ export default function ProductList() {
       skip: (currentPage - 1) * pageSize,
       limit: pageSize,
     };
-    const searchParams: URLSearchParams = new URLSearchParams(filters);
+    // const searchParams: URLSearchParams = new URLSearchParams(filters);
 
-    callApi(searchParams);
+    // callApi(searchParams);
+    callApi(filters);
   }, [callApi, currentPage, pageSize]);
 
   const onUpdateFinish = (values: any) => {
@@ -285,6 +358,7 @@ export default function ProductList() {
         <select
           id="cars"
           name="sup"
+          value = {filter.sup}
           onChange={onChangeFilter}
           style={{
             width: "100px",
@@ -305,6 +379,7 @@ export default function ProductList() {
         <select
           id="cars"
           name="category"
+          value = {filter.category}
           onChange={onChangeFilter}
           style={{
             width: "150px",
@@ -395,7 +470,6 @@ export default function ProductList() {
         <Button type="primary" onClick={create} style={{ marginLeft: "10px" }}>
           Create
         </Button>
-        
       </div>
 
       <Table
@@ -411,6 +485,7 @@ export default function ProductList() {
           onShowSizeChange: (_, size) => setPageSize(size),
         }}
       />
+      {deleteConfirmModal}
 
       {/* EDIT FORM */}
 
